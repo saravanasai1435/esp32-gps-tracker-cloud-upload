@@ -1,70 +1,30 @@
-# ESP32_GPS_Tracker_Cloud_Upload
+# ESP32 GPS Tracker with Cloud Upload
 
-## Purpose
-ESP32 GPS tracker with offline data storage and automatic cloud upload when WiFi is available. Reads NMEA sentences from GPS module via UART, parses location data, and uploads to cloud server.
+ESP32 GPS tracker with NMEA parsing, offline data buffering, and automatic cloud upload when WiFi is available.
 
-## Hardware
-- ESP32 DevKit
-- GPS Module (UART, 9600 baud): TX→GPIO16, RX→GPIO17
-- 2x Status LEDs: Network (GPIO18), GPS (GPIO19)
+## How the Code Works
 
-## Software
-- Language: C++ (Arduino)
-- Libraries: WiFi, HTTPClient, ArduinoJson, HardwareSerial
-- Server: `https://www.circuitdigest.cloud/geolinker`
-- API Key: `G3cHfwwN0rgA` (12 chars)
-- WiFi: APFIBER_0978 / 0000009055
+1. **GPS Initialization**: UART1 (GPIO16/17) at 9600 baud for GPS module. WiFi connection to AP.
 
-## Features
-- **GPS Parsing**: GPGGA (location, satellites, altitude) + GPRMC (date)
-- **Time Conversion**: UTC to IST (+5:30) with date rollover
-- **Offline Buffer**: Stores GPS data in vector when WiFi unavailable
-- **Auto Reconnect**: WiFi reconnection on disconnect
-- **Status LEDs**: Network LED (WiFi), GPS LED (valid fix)
-- **Upload Interval**: Every 10 seconds
+2. **NMEA Parsing**: Continuous reading from GPS serial. Parses GPGGA and GPRMC sentences.
 
-## Data Structures
-```cpp
-struct GPSRawData {
-  double latitude, longitude, altitude;
-  char latitudeDir, longitudeDir;
-  int satellites;
-  int hours, minutes, seconds;
-  int day, month, year;
-  String timestamp;
-};
+3. **Time Conversion**: UTC to IST (+5:30) with date rollover handling.
 
-struct GPSData {
-  double latitude, longitude;
-  String timestamp;  // "YYYY-MM-DD HH:MM:SS"
-};
-```
+4. **Offline Buffer**: std::vector stores data when WiFi disconnected. Auto-flushes on reconnect.
 
-## JSON Payload Format
-```json
-{
-  "timestamp": ["2025-09-05 10:30:45"],
-  "lat": [12.9716],
-  "long": [77.5946]
-}
-```
+5. **Cloud Upload**: HTTP POST to CircuitDigest cloud every 10 seconds with JSON payload.
 
-## Pinout
-- GPS RX: GPIO 16 (ESP32 UART1 RX)
-- GPS TX: GPIO 17 (ESP32 UART1 TX)
-- Network LED: GPIO 18
-- GPS LED: GPIO 19
+6. **Status LEDs**: Network LED (GPIO18) = WiFi status. GPS LED (GPIO19) = valid fix.
 
-## NMEA Parsing
-- **GPGGA**: Time, Lat/Lon, Fix quality, Satellites, Altitude
-- **GPRMC**: Date, Status, Speed, Course
-- Decimal conversion: `degrees + minutes/60`
-- Minimum 4 satellites for valid fix
+## Main Components
 
-## Status
-- **Working**: Complete implementation with offline buffering
-- **Confidence**: HIGH
+- ESP32 DevKit + GPS Module (UART, 9600 baud)
+- 2 Status LEDs (Network, GPS)
+- CircuitDigest Cloud (geolinker endpoint)
 
-## Related Projects
-- Original folder: `esp32tracker` (with debug configs)
-- Similar: `ESP32_GPS_TFT_Display` (sketch_jul13a)
+## How to Run
+
+1. Wire GPS: TX→GPIO16, RX→GPIO17, VCC→3.3V, GND→GND
+2. Update WiFi credentials in code
+3. Flash via Arduino IDE or PlatformIO
+4. Monitor serial at 115200 baud
